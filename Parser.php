@@ -251,14 +251,13 @@ class Parser
             if ($matchedDomain == '' && strlen($IdnaConverter->encode($parsedString)) <= 63) {
                 $matchedDomain = $IdnaConverter->decode(preg_replace('/[^a-zA-Z0-9\-]/', '', $IdnaConverter->encode($parsedString)));
                 $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
-                $matchedTld = $defaultTld;
+                $matchedTld = $matchedDomainIdn = $defaultTld;
             } elseif ($matchedDomain != '' && strlen($matchedDomainIdn) <= 63 && $matchedTld != '') {
                 $matchedDomain = $IdnaConverter->decode(preg_replace('/[^a-zA-Z0-9\-]/', '', $IdnaConverter->encode($matchedDomain)));
                 $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
             } else {
                 throw new \Novutec\DomainParser\Exception('Unparsable domain name.');
             }
-            echo strlen($matchedDomainIdn);
             
             return new Result($matchedDomain, $matchedDomainIdn, $matchedTld, $matchedTldIdn);
         } catch (\Novutec\DomainParser\Exception $e) {
