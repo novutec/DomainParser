@@ -10,7 +10,7 @@ Licensed under the Apache License, Version 2.0 (the "License").
 Installation
 ------------
 
-Installing from source: `git clone git://github.com/novutec/domainparser.git`
+Installing from source: `git clone git://github.com/novutec/DomainParser.git`
 
 Move the source code to your preferred project folder.
 
