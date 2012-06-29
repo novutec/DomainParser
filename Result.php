@@ -41,7 +41,7 @@ class Result
      * @var string
      * @access protected
      */
-    protected $_domain;
+    protected $domain;
 
     /**
      * Domain name IDN converted
@@ -49,7 +49,7 @@ class Result
      * @var string
      * @access protected
      */
-    protected $_idn_domain;
+    protected $idn_domain;
 
     /**
      * Top-level domain name
@@ -57,7 +57,7 @@ class Result
      * @var string
      * @access protected
      */
-    protected $_tld;
+    protected $tld;
 
     /**
      * Top-level domain name IDN converted
@@ -65,7 +65,7 @@ class Result
      * @var string
      * @access protected
      */
-    protected $_idn_tld;
+    protected $idn_tld;
 
     /**
      * Constructs a new object from parsed domain name by DomainParser
@@ -78,10 +78,10 @@ class Result
      */
     public function __construct($domain = '', $idn_domain = '', $tld = '', $idn_tld = '')
     {
-        $this->_domain = $domain;
-        $this->_idn_domain = $idn_domain;
-        $this->_tld = $tld;
-        $this->_idn_tld = $idn_tld;
+        $this->domain = $domain;
+        $this->idn_domain = $idn_domain;
+        $this->tld = $tld;
+        $this->idn_tld = $idn_tld;
     }
 
     /**
@@ -120,5 +120,30 @@ class Result
         }
         
         return null;
+    }
+
+    /**
+     * Convert properties to json
+     *
+     * @return string
+     */
+    public function toJson()
+    {
+        return json_encode($this->toArray());
+    }
+
+    /**
+     * Convert properties to array
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $output['domain'] = $this->domain;
+        $output['idn_domain'] = $this->idn_domain;
+        $output['tld'] = $this->tld;
+        $output['idn_tld'] = $this->idn_tld;
+        
+        return $output;
     }
 }
