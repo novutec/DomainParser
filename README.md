@@ -47,7 +47,7 @@ Thanks to developers of following used libraries:
 Issues
 ------
 
-Please report any issues via https://github.com/novutec/domainparser/issues
+Please report any issues via https://github.com/novutec/DomainParser/issues
 
 LICENSE and COPYRIGHT
 ---------------------
