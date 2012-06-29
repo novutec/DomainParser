@@ -1,8 +1,8 @@
-Novutec Domain Parser
+Novutec DomainParser
 =====================
 
-Novutec Domain Parser lets you parse every given string to return you
-the domain name out of this string.
+Novutec DomainParser lets you parse a given string to return you the 
+domain name.
 
 Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
 Licensed under the Apache License, Version 2.0 (the "License").
@@ -23,7 +23,7 @@ Usage
 * create parser object
 `$Parser = new Novutec\DomainParser\Parser();`
 
-* call parse function
+* call parse method
 `$result = $Parser->parse($string);`
 
 * please note if the given string doesn't contain a domain name the default tld
@@ -32,8 +32,8 @@ method call
 `$result = $Parser->parse($string, $yourPreferredDefaultTld);`
 
 * you can choose 3 different return types. the types are php array, php object and json. by
-default it is php object. if you want to change that call the format function before calling the
-parse function.
+default it is php object. if you want to change that call the format method before calling the
+parse method.
 `$Parser->setFormat('json');`
 
 3rd Party Libraries
