@@ -27,17 +27,17 @@ namespace Novutec\DomainParser;
 /**
  * @see IdnaConverter
  */
-require_once 'DomainParser/Idna.php';
+require_once 'Idna.php';
 
 /**
  * @see DomainParserResult
  */
-require_once 'DomainParser/Result.php';
+require_once 'Result.php';
 
 /**
  * @see DomainParserException
  */
-require_once 'DomainParser/Exception.php';
+require_once 'Exception.php';
 
 /**
  * DomainParser

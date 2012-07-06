@@ -51,6 +51,10 @@ Thanks to developers of following used libraries:
 * phlyLabs: http://phlylabs.de
 * mozilla: http://www.mozilla.org 
 
+ChangeLog
+---------
+See ChangeLog at https://github.com/novutec/DomainParser/wiki/ChangeLog
+
 Issues
 ------
 
