@@ -36,6 +36,22 @@ class Result
 {
 
     /**
+     * Fully qualified domain name
+     *
+     * @var string
+     * @access protected
+     */
+    protected $fqdn;
+
+    /**
+     * IDN fully qualified domain name
+     *
+     * @var string
+     * @access protected
+     */
+    protected $idnFqdn;
+
+    /**
      * Domain name
      * 
      * @var string
@@ -49,7 +65,7 @@ class Result
      * @var string
      * @access protected
      */
-    protected $idn_domain;
+    protected $idnDomain;
 
     /**
      * Top-level domain name
@@ -65,23 +81,42 @@ class Result
      * @var string
      * @access protected
      */
-    protected $idn_tld;
+    protected $idnTld;
+
+    /**
+     * Is the hostname valid
+     * 
+     * @var boolean
+     * @access protected
+     */
+    protected $validHostname;
 
     /**
      * Constructs a new object from parsed domain name by DomainParser
      * 
      * @param  string $domain
-     * @param  string $idn_domain
+     * @param  string $idnDomain
      * @param  string $tld
-     * @param  string $idn_tld
+     * @param  string $idnTld
+     * @param  boolean $validHostname
      * @return void
      */
-    public function __construct($domain = '', $idn_domain = '', $tld = '', $idn_tld = '')
+    public function __construct($domain = '', $idnDomain = '', $tld = '', $idnTld = '', 
+            $validHostname = false)
     {
+        if ($domain != '' && $tld != '') {
+            $this->fqdn = $domain . '.' . $tld;
+        }
+        
+        if ($idnDomain != '' && $idnTld != '') {
+            $this->idnFqdn = $idnDomain . '.' . $idnTld;
+        }
+        
         $this->domain = $domain;
-        $this->idn_domain = $idn_domain;
+        $this->idnDomain = $idnDomain;
         $this->tld = $tld;
-        $this->idn_tld = $idn_tld;
+        $this->idnTld = $idnTld;
+        $this->validHostname = $validHostname;
     }
 
     /**
@@ -123,6 +158,32 @@ class Result
     }
 
     /**
+     * Returns the result by format
+     * 
+     * @param  string $format
+     * @return mixed
+     */
+    public function get($format)
+    {
+        switch ($format) {
+            case 'json':
+                return $this->toJson();
+                break;
+            case 'serialize':
+                return $this->serialize();
+                break;
+            case 'array':
+                return $this->toArray();
+                break;
+            case 'xml':
+                return $this->toXml();
+                break;
+            default:
+                return $this;
+        }
+    }
+
+    /**
      * Convert properties to json
      *
      * @return string
@@ -139,11 +200,36 @@ class Result
      */
     public function toArray()
     {
-        $output['domain'] = $this->domain;
-        $output['idn_domain'] = $this->idn_domain;
-        $output['tld'] = $this->tld;
-        $output['idn_tld'] = $this->idn_tld;
+        return get_object_vars($this);
+    }
+
+    /**
+     * Serialize properties
+     *
+     * @return string
+     */
+    public function serialize()
+    {
+        return serialize($this->toArray());
+    }
+
+    /**
+     * Convert properties to xml by using SimpleXMLElement
+     *
+     * @return string
+     */
+    public function toXml()
+    {
+        $xml = new \SimpleXMLElement(
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><parser></parser>');
         
-        return $output;
+        $xml->addChild('fqdn', $this->fqdn);
+        $xml->addChild('idn_fqdn', $this->idnFqdn);
+        $xml->addChild('domain', $this->domain);
+        $xml->addChild('idnDomain', $this->idnDomain);
+        $xml->addChild('tld', $this->tld);
+        $xml->addChild('idnTld', $this->idnTld);
+        
+        return $xml->asXML();
     }
 }

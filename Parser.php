@@ -46,7 +46,6 @@ require_once 'DomainParser/Exception.php';
  * @package    DomainParser
  * @copyright  Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
  * @license    http://www.apache.org/licenses/LICENSE-2.0
- * @todo       adding json support
  */
 class Parser
 {
@@ -100,7 +99,7 @@ class Parser
     protected $tldUrl = 'http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1';
 
     /**
-     * Output format 'object', 'array' or 'json'
+     * Output format 'object', 'array', 'json', 'serialize' or 'xml'
      *
      * @var string
      * @access protected
@@ -108,16 +107,36 @@ class Parser
     protected $format = 'object';
 
     /**
+     * Encoding of domain name
+     * 
+     * @var string
+     * @access protected
+     */
+    protected $encoding = 'utf-8';
+
+    /**
      * Creates a DomainParser object
      *
-     * @param  boolean $throwException
-     * @param  integer $cacheTime
+     * @param  string $format
      * @return void
      */
-    public function __construct($throwExceptions = false, $cacheTime = 432000)
+    public function __construct($format = 'object')
     {
-        $this->throwExceptions($throwExceptions);
-        $this->cacheTime($cacheTime);
+        $this->setFormat($format);
+    }
+
+    /**
+     * Checks if given domain name is valid
+     * 
+     * @param  string $domain
+     * @return boolean
+     */
+    public function isValid($domain)
+    {
+        $this->setFormat('object');
+        $Result = $this->parse($domain, '');
+        
+        return $Result->validHostname;
     }
 
     /**
@@ -143,20 +162,29 @@ class Parser
             $matchedDomainIdn = '';
             $matchedTld = '';
             $matchedTldIdn = '';
+            $validHostname = true;
             
             $IdnaConverter = new Idna(array('idn_version' => 2008));
             
-            preg_match('/^((http|https|ftp|ftps|news|ssh|sftp|gopher):[\/]{2,})?([^\/]+)/', mb_strtolower(trim($unparsedString), 'UTF-8'), $matches);
+            preg_match('/^((http|https|ftp|ftps|news|ssh|sftp|gopher):[\/]{2,})?([^\/]+)/', mb_strtolower(trim($unparsedString), $this->encoding), $matches);
             $parsedString = end($matches);
             
             foreach ($this->tldList['content'] as $tld) {
                 if (preg_match('/\.' . $tld . '$/', $parsedString, $trash)) {
                     $matchedTld = $tld;
                     $matchedTldIdn = $IdnaConverter->encode($tld);
-                    $matchedDomain = str_replace('.' . $matchedTld, '', $parsedString);
                     
-                    if (strpos($matchedDomain, '.')) {
+                    $matchedDomain = str_replace('.' . $matchedTld, '', $parsedString);
+                    $matchedDomain = rtrim($matchedDomain, '.');
+                    $matchedDomain = ltrim($matchedDomain, '.');
+                    
+                    if ($matchedTld != 'name' && strpos($matchedDomain, '.')) {
                         $matchedDomain = str_replace('.', '', strrchr($matchedDomain, '.'));
+                    }
+                    
+                    if (strpos($matchedDomain, ' ')) {
+                        $matchedDomain = explode(' ', $matchedDomain);
+                        $matchedDomain = end($matchedDomain);
                     }
                     
                     $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
@@ -165,39 +193,37 @@ class Parser
                 }
             }
             
-            if ($matchedDomain == '' && strlen($IdnaConverter->encode($parsedString)) <= 63) {
-                $matchedDomain = $IdnaConverter->decode(preg_replace('/[^a-zA-Z0-9\-]/', '', $IdnaConverter->encode($parsedString)));
+            if ($matchedDomain == '' && strlen($matchedDomainIdn) <= 63) {
+                $matchedDomain = $IdnaConverter->decode(preg_replace_callback('/[^a-zA-Z0-9\-\.]/', function (
+                        $match) use(&$validHostname)
+                {
+                    $validHostname = false;
+                }, $IdnaConverter->encode($parsedString)));
                 $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
                 $matchedTld = $matchedTldIdn = $defaultTld;
             } elseif ($matchedDomain != '' && strlen($matchedDomainIdn) <= 63 && $matchedTld != '') {
-                $matchedDomain = $IdnaConverter->decode(preg_replace('/[^a-zA-Z0-9\-]/', '', $IdnaConverter->encode($matchedDomain)));
+                $matchedDomain = $IdnaConverter->decode(preg_replace_callback('/[^a-zA-Z0-9\-\.]/', function (
+                        $match) use(&$validHostname)
+                {
+                    $validHostname = false;
+                }, $IdnaConverter->encode($matchedDomain)));
                 $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
             } else {
                 throw new \Novutec\DomainParser\Exception('Unparsable domain name.');
             }
             
-            $Result = new Result($matchedDomain, $matchedDomainIdn, $matchedTld, $matchedTldIdn);
-            
-            switch ($this->format) {
-                case 'json':
-                    return $Result->toJson();
-                    break;
-                case 'array':
-                    return $Result->toArray();
-                    break;
-                default:
-                    return $Result;
-            }
+            $Result = new Result($matchedDomain, $matchedDomainIdn, $matchedTld, $matchedTldIdn, 
+                    $validHostname);
         } catch (\Novutec\DomainParser\Exception $e) {
             if ($this->throwExceptions) {
                 throw $e;
             }
             
-            $result = new Result();
-            $result->exception = $e;
-            
-            return $result;
+            $Result = new Result();
+            $Result->error = $e->getMessage();
         }
+        
+        return $Result->get($this->format);
     }
 
     /**
@@ -281,10 +307,12 @@ class Parser
             $subtlds[] = $line;
         }
         
-        $subtlds = array_merge(array('com.cc', 'org.cc', 'edu.cc', 'net.cc', 'co.uk', 'me.uk', 
-                'net.uk', 'org.uk', 'sch.uk', 'ac.uk', 'gov.uk', 'nhs.uk', 'police.uk', 'mod.uk', 
-                'asn.au', 'com.au', 'net.au', 'id.au', 'org.au', 'edu.au', 'gov.au', 'csiro.au', 
-                'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke', 'me.ke', 'mobi.ke', 'info.ke'), $subtlds);
+        $subtlds = array_merge(array('co.cc', 'com.cc', 'org.cc', 'edu.cc', 'net.cc', 'co.uk', 
+                'de.vu', 'me.uk', 'net.uk', 'org.uk', 'sch.uk', 'ac.uk', 'gov.uk', 'nhs.uk', 
+                'police.uk', 'mod.uk', 'asn.au', 'com.au', 'net.au', 'id.au', 'org.au', 'edu.au', 
+                'gov.au', 'csiro.au', 'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke', 'me.ke', 
+                'mobi.ke', 'info.ke', 'com.tr', 'gen.tr', 'org.tr', 'biz.tr', 'info.tr', 'name.tr', 
+                'net.tr', 'web.tr', 'edu.tr'), $subtlds);
         $this->tldList['content'] = array_unique($subtlds);
         $this->tldList['timestamp'] = time();
         usort($this->tldList['content'], function ($a, $b)
@@ -296,23 +324,34 @@ class Parser
     /**
      * Set output format
      *
-     * You may choose between 'object', 'array' or 'json' output format
+     * You may choose between 'object', 'array', 'json', 'serialize' or 'xml' output format
      *
      * @param  string $format
      * @return void
      */
     public function setFormat($format = 'object')
     {
-        $this->format = $format;
+        $this->format = filter_var($format, FILTER_SANITIZE_STRING);
+    }
+
+    /**
+     * Set encoding of domain name
+     * 
+     * @param  string $encoding
+     * @return void
+     */
+    public function setEncodng($encoding = 'utf-8')
+    {
+        $this->encoding = filter_var($encoding, FILTER_SANITIZE_STRING);
     }
 
     /**
      * Set the throwExceptions flag
      * 
-     * Set whether exceptions encounted in the dispatch loop should be thrown
-     * or caught and trapped in the response object.
+     * Set whether exceptions encounted during processing should be thrown
+     * or caught and trapped in the response as a string message.
      * 
-     * Default behaviour is to trap them in the response object; call this
+     * Default behaviour is to trap them in the response; call this
      * method to have them thrown.
      * 
      * @param  boolean $throwExceptions
@@ -320,7 +359,7 @@ class Parser
      */
     public function throwExceptions($throwExceptions = false)
     {
-        $this->throwExceptions = $throwExceptions;
+        $this->throwExceptions = filter_var($throwExceptions, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
@@ -334,7 +373,7 @@ class Parser
      */
     public function reload($reload = false)
     {
-        $this->reload = $reload;
+        $this->reload = filter_var($reload, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
@@ -347,6 +386,6 @@ class Parser
      */
     public function cacheTime($cacheTime = 432000)
     {
-        $this->cacheTime = $cacheTime;
+        $this->cacheTime = filter_var($cacheTime, FILTER_VALIDATE_INT);
     }
 }

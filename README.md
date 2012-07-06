@@ -1,8 +1,13 @@
 Novutec DomainParser
-=====================
+====================
 
-Novutec DomainParser lets you parse a given string to return you the 
-domain name.
+To parse or validate a domain name.
+
+At first it will parse a given string to split it by the hostname and top-level domain name.
+This will be done with a list from Mozilla and we also added some missing second-level domain
+names. Afterwards we will convert the domain name to it punycode and unicode notation. If an
+error occures by doing so, e.g. characters that are not allowed. It will kill these characters
+and set a flag to false. This flag is used for the validation.
 
 Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
 Licensed under the Apache License, Version 2.0 (the "License").
@@ -10,7 +15,7 @@ Licensed under the Apache License, Version 2.0 (the "License").
 Installation
 ------------
 
-Installing from source: `git clone git://github.com/novutec/DomainParser.git`
+Installing from source: `git clone git://github.com/novutec/DomainParser.git` or [download the latest release](https://github.com/novutec/DomainParser/zipball/master)
 
 Move the source code to your preferred project folder.
 
@@ -31,10 +36,12 @@ Usage
 method call
 `$result = $Parser->parse($string, $yourPreferredDefaultTld);`
 
-* you can choose 3 different return types. the types are php array, php object and json. by
-default it is php object. if you want to change that call the format method before calling the
-parse method.
+* you can choose 5 different return types. the types are array, object, json, serialize and
+xml. by default it is object. if you want to change that call the format method before calling
+the parse method or provide to the constructer. if you are not using object and an
+error occurs, then exceptions will not be trapped within the response and thrown directy.
 `$Parser->setFormat('json');`
+`$Parser = new Novutec\DomainParser\Parser('json');`
 
 3rd Party Libraries
 -------------------
@@ -51,6 +58,8 @@ Please report any issues via https://github.com/novutec/DomainParser/issues
 
 LICENSE and COPYRIGHT
 ---------------------
+
+Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
