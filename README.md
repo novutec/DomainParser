@@ -14,40 +14,46 @@ Licensed under the Apache License, Version 2.0 (the "License").
 
 Installation
 ------------
-
 Installing from source: `git clone git://github.com/novutec/DomainParser.git` or [download the latest release](https://github.com/novutec/DomainParser/zipball/master)
 
 Move the source code to your preferred project folder.
 
 Usage
 -----
-
 * include Parser.php
-`require_once 'DomainParser/Parser.php';`
+```
+require_once 'DomainParser/Parser.php';
+```
 
-* create parser object
-`$Parser = new Novutec\DomainParser\Parser();`
+* create Parser() object
+```
+$Parser = new Novutec\DomainParser\Parser();
+```
 
-* call parse method
-`$result = $Parser->parse($string);`
+* call parse() method
+```
+$result = $Parser->parse($string);
+```
 
 * please note if the given string doesn't contain a domain name the default tld
 .com will be added to the query. You may change this by adding a tld to the parse
 method call
-`$result = $Parser->parse($string, $yourPreferredDefaultTld);`
+```
+$result = $Parser->parse($string, $yourPreferredDefaultTld);
+```
 
 * you can choose 5 different return types. the types are array, object, json, serialize and
 xml. by default it is object. if you want to change that call the format method before calling
 the parse method or provide to the constructer. if you are not using object and an
 error occurs, then exceptions will not be trapped within the response and thrown directy.
-`$Parser->setFormat('json');`
-`$Parser = new Novutec\DomainParser\Parser('json');`
+```
+$Parser->setFormat('json');
+$Parser = new Novutec\DomainParser\Parser('json');
+```
 
 3rd Party Libraries
 -------------------
-
 Thanks to developers of following used libraries:
-
 * phlyLabs: http://phlylabs.de
 * mozilla: http://www.mozilla.org 
 
@@ -57,12 +63,10 @@ See ChangeLog at https://github.com/novutec/DomainParser/wiki/ChangeLog
 
 Issues
 ------
-
 Please report any issues via https://github.com/novutec/DomainParser/issues
 
 LICENSE and COPYRIGHT
 ---------------------
-
 Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
 
 Licensed under the Apache License, Version 2.0 (the "License");

@@ -25,26 +25,13 @@
 namespace Novutec\DomainParser;
 
 /**
- * DomainParserException
+ * Exception
  *
  * @category   Novutec
  * @package    DomainParser
  * @copyright  Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
  * @license    http://www.apache.org/licenses/LICENSE-2.0
  */
-class Exception extends \Exception
+class Exception extends AbstractException
 {
-
-    /**
-     * Construct the exception
-     * 
-     * @param  string $message
-     * @param  integer $code
-     * @param  Exception $previous
-     * @return void
-     */
-    public function __construct($message = '', $code = 0, Exception $previous = null)
-    {
-        parent::__construct($message, (int) $code, $previous);
-    }
 }

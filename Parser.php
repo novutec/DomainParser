@@ -25,19 +25,24 @@
 namespace Novutec\DomainParser;
 
 /**
+ * define DomainParser Path
+ */
+define('DOMAINPARSERPATH', dirname(__FILE__));
+
+/**
  * @see IdnaConverter
  */
-require_once 'Idna.php';
+require_once DOMAINPARSERPATH . '/Idna.php';
 
 /**
  * @see DomainParserResult
  */
-require_once 'Result.php';
+require_once DOMAINPARSERPATH . '/Result.php';
 
 /**
  * @see DomainParserException
  */
-require_once 'Exception.php';
+require_once DOMAINPARSERPATH . '/Exception/AbstractException.php';
 
 /**
  * DomainParser
@@ -191,9 +196,16 @@ class Parser
                     
                     break;
                 }
+                
+                if ($tld == $parsedString) {
+                    $matchedTld = $tld;
+                    $matchedTldIdn = $IdnaConverter->encode($tld);
+                    
+                    break;
+                }
             }
             
-            if ($matchedDomain == '' && strlen($matchedDomainIdn) <= 63) {
+            if ($matchedDomain == '' && strlen($matchedDomainIdn) <= 63 && $matchedTld == '') {
                 $matchedDomain = $IdnaConverter->decode(preg_replace_callback('/[^a-zA-Z0-9\-\.]/', function (
                         $match) use(&$validHostname)
                 {
@@ -208,13 +220,15 @@ class Parser
                     $validHostname = false;
                 }, $IdnaConverter->encode($matchedDomain)));
                 $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
+            } elseif ($matchedDomain == '' && $matchedTld != '') {
+                $validHostname = false;
             } else {
-                throw new \Novutec\DomainParser\Exception('Unparsable domain name.');
+                throw \Novutec\DomainParser\AbstractException::factory('UnparsableString', 'Unparsable domain name.');
             }
             
             $Result = new Result($matchedDomain, $matchedDomainIdn, $matchedTld, $matchedTldIdn, 
                     $validHostname);
-        } catch (\Novutec\DomainParser\Exception $e) {
+        } catch (\Novutec\DomainParser\AbstractException $e) {
             if ($this->throwExceptions) {
                 throw $e;
             }
@@ -229,7 +243,8 @@ class Parser
     /**
      * Checks if the domain list exists or cached time is reached
      *
-     * @throws DomainParserException
+     * @throws OpenFileErrorException
+     * @throws WriteFileErrorException
      * @return void
      */
     private function load()
@@ -243,16 +258,16 @@ class Parser
             }
         }
         
-        if (! file_exists($filename) || $this->reload === true) {
+        if (! file_exists($filename) || $this->reload === false) {
             $this->catchTlds();
             $file = fopen($filename, 'w+');
             
             if ($file === false) {
-                throw new \Novutec\DomainParser\Exception('Could not open cache file.');
+                throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
             }
             
             if (fwrite($file, serialize($this->tldList)) === false) {
-                throw new \Novutec\DomainParser\Exception('Could not write to file.');
+                throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file.');
             }
             
             fclose($file);
@@ -269,7 +284,7 @@ class Parser
      *
      * The manual added list is not complete.
      *
-     * @throws DomainParserException
+     * @throws ConnectErrorException
      * @return void
      */
     private function catchTlds()
@@ -277,7 +292,7 @@ class Parser
         $content = @file($this->tldUrl);
         
         if ($content === false) {
-            throw new \Novutec\DomainParser\Exception('Could not catch file from server.');
+            throw \Novutec\DomainParser\AbstractException::factory('Connect', 'Could not catch file from server.');
             return;
         }
         
