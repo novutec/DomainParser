@@ -353,7 +353,7 @@ class Parser
                 'gov.au', 'csiro.au', 'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke', 'me.ke', 
                 'mobi.ke', 'info.ke', 'com.tr', 'gen.tr', 'org.tr', 'biz.tr', 'info.tr', 'name.tr', 
                 'net.tr', 'web.tr', 'edu.tr', 'ac.nz', 'co.nz', 'geek.nz', 'gen.nz', 'maori.nz', 
-                'net.nz', 'org.nz', 'school.nz'), $subtlds);
+                'net.nz', 'org.nz', 'school.nz', 'ac.il', 'co.il', 'org.il', 'net.il', 'k12.il', 'gov.il', 'muni.il', 'idf.il'), $subtlds);
         $this->tldList['content'] = array_unique($subtlds);
         $this->tldList['timestamp'] = time();
         usort($this->tldList['content'], function ($a, $b)
