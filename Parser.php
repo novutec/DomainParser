@@ -283,7 +283,7 @@ class Parser
             }
         }
         
-        if (! file_exists($filename) || $this->reload === false) {
+        if (! file_exists($filename) || $this->reload === true) {
             $this->catchTlds();
             $file = fopen($filename, 'w+');
             
@@ -352,7 +352,8 @@ class Parser
                 'police.uk', 'mod.uk', 'asn.au', 'com.au', 'net.au', 'id.au', 'org.au', 'edu.au', 
                 'gov.au', 'csiro.au', 'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke', 'me.ke', 
                 'mobi.ke', 'info.ke', 'com.tr', 'gen.tr', 'org.tr', 'biz.tr', 'info.tr', 'name.tr', 
-                'net.tr', 'web.tr', 'edu.tr'), $subtlds);
+                'net.tr', 'web.tr', 'edu.tr', 'ac.nz', 'co.nz', 'geek.nz', 'gen.nz', 'maori.nz', 
+                'net.nz', 'org.nz', 'school.nz'), $subtlds);
         $this->tldList['content'] = array_unique($subtlds);
         $this->tldList['timestamp'] = time();
         usort($this->tldList['content'], function ($a, $b)
