@@ -120,6 +120,14 @@ class Parser
     protected $encoding = 'utf-8';
 
     /**
+     * Set cache path
+     * 
+     * @var string
+     * @access protected
+     */
+    protected $path;
+
+    /**
      * Creates a DomainParser object
      *
      * @param  string $format
@@ -128,6 +136,22 @@ class Parser
     public function __construct($format = 'object')
     {
         $this->setFormat($format);
+        $this->setCachePath();
+    }
+
+    /**
+     * Set cache path
+     * 
+     * @param  string $path
+     * @return void
+     */
+    public function setCachePath($path = null)
+    {
+        if (is_null($path)) {
+            $this->path = sys_get_temp_dir();
+        } else {
+            $this->path = filter_var($path, FILTER_SANITIZE_STRING);
+        }
     }
 
     /**
@@ -152,6 +176,7 @@ class Parser
      * 
      * Also skips given string if it is longer than 63 characters.
      *
+     * @throws instance of AbstractException if throwExceptions = true
      * @param  string $unparsedString        
      * @param  string $defaultTld        
      * @return void
@@ -249,12 +274,12 @@ class Parser
      */
     private function load()
     {
-        $filename = sys_get_temp_dir() . '/domainparsertld.txt';
+        $filename = $this->path . '/domainparsertld.txt';
         
         if (file_exists($filename)) {
             $this->tldList = unserialize(file_get_contents($filename));
             if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
-                $reload = true;
+                $this->reload = true;
             }
         }
         
@@ -267,7 +292,7 @@ class Parser
             }
             
             if (fwrite($file, serialize($this->tldList)) === false) {
-                throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file.');
+                throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
             }
             
             fclose($file);
