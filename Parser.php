@@ -197,7 +197,7 @@ class Parser
             $IdnaConverter = new Idna(array('idn_version' => 2008));
             
             preg_match('/^((http|https|ftp|ftps|news|ssh|sftp|gopher):[\/]{2,})?([^\/]+)/', mb_strtolower(trim($unparsedString), $this->encoding), $matches);
-            $parsedString = end($matches);
+            $parsedString = $IdnaConverter->encode(end($matches));
             
             foreach ($this->tldList['content'] as $tld) {
                 if (preg_match('/\.' . $tld . '$/', $parsedString, $trash)) {
@@ -251,8 +251,8 @@ class Parser
                 throw \Novutec\DomainParser\AbstractException::factory('UnparsableString', 'Unparsable domain name.');
             }
             
-            $Result = new Result($matchedDomain, $matchedDomainIdn, $matchedTld, $matchedTldIdn, 
-                    $validHostname);
+            $Result = new Result($matchedDomain, $matchedDomainIdn, 
+                    $IdnaConverter->decode($matchedTld), $matchedTldIdn, $validHostname);
         } catch (\Novutec\DomainParser\AbstractException $e) {
             if ($this->throwExceptions) {
                 throw $e;
@@ -314,6 +314,7 @@ class Parser
      */
     private function catchTlds()
     {
+        $IdnaConverter = new Idna(array('idn_version' => 2008));
         $content = @file($this->tldUrl);
         
         if ($content === false) {
@@ -344,7 +345,7 @@ class Parser
             if (strstr($line, '!')) {
                 continue;
             }
-            $subtlds[] = $line;
+            $subtlds[] = $IdnaConverter->encode($line);
         }
         
         $subtlds = array_merge(array('co.cc', 'com.cc', 'org.cc', 'edu.cc', 'net.cc', 'co.uk', 
@@ -353,7 +354,8 @@ class Parser
                 'gov.au', 'csiro.au', 'co.ke', 'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke', 'me.ke', 
                 'mobi.ke', 'info.ke', 'com.tr', 'gen.tr', 'org.tr', 'biz.tr', 'info.tr', 'name.tr', 
                 'net.tr', 'web.tr', 'edu.tr', 'ac.nz', 'co.nz', 'geek.nz', 'gen.nz', 'maori.nz', 
-                'net.nz', 'org.nz', 'school.nz', 'ac.il', 'co.il', 'org.il', 'net.il', 'k12.il', 'gov.il', 'muni.il', 'idf.il'), $subtlds);
+                'net.nz', 'org.nz', 'school.nz', 'ac.il', 'co.il', 'org.il', 'net.il', 'k12.il', 
+                'gov.il', 'muni.il', 'idf.il'), $subtlds);
         $this->tldList['content'] = array_unique($subtlds);
         $this->tldList['timestamp'] = time();
         usort($this->tldList['content'], function ($a, $b)
