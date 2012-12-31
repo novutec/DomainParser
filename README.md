@@ -1,7 +1,7 @@
 Novutec DomainParser
 ====================
 
-To parse or validate a domain name.
+To parse and to validate a domain name.
 
 At first it will parse a given string to split it by the hostname and top-level domain name.
 This will be done with a list from Mozilla and we also added some missing second-level domain
@@ -9,7 +9,7 @@ names. Afterwards we will convert the domain name to it punycode and unicode not
 error occures by doing so, e.g. characters that are not allowed. It will kill these characters
 and set a flag to false. This flag is used for the validation.
 
-Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
+Copyright (c) 2007 - 2013 Novutec Inc. (http://www.novutec.com)
 Licensed under the Apache License, Version 2.0 (the "License").
 
 Installation
@@ -20,31 +20,31 @@ Move the source code to your preferred project folder.
 
 Usage
 -----
-* include Parser.php
+* Include Parser.php
 ```
 require_once 'DomainParser/Parser.php';
 ```
 
-* create Parser() object
+* Create Parser() object
 ```
 $Parser = new Novutec\DomainParser\Parser();
 ```
 
-* call parse() method
+* Call parse() method
 ```
 $result = $Parser->parse($string);
 ```
 
-* please note if the given string doesn't contain a domain name the default tld
+* Please note, if the given string doesn't contain a domain name the default tld
 .com will be added to the query. You may change this by adding a tld to the parse
-method call
+method call.
 ```
 $result = $Parser->parse($string, $yourPreferredDefaultTld);
 ```
 
-* you can choose 5 different return types. the types are array, object, json, serialize and
-xml. by default it is object. if you want to change that call the format method before calling
-the parse method or provide to the constructer. if you are not using object and an
+* You may choose 5 different return types. the types are array, object, json, serialize and
+xml. By default it is object. If you want to change that call the format method before calling
+the parse method or provide to the constructer. If you are not using object and an
 error occurs, then exceptions will not be trapped within the response and thrown directy.
 ```
 $Parser->setFormat('json');
@@ -67,7 +67,7 @@ Please report any issues via https://github.com/novutec/DomainParser/issues
 
 LICENSE and COPYRIGHT
 ---------------------
-Copyright (c) 2007 - 2012 Novutec Inc. (http://www.novutec.com)
+Copyright (c) 2007 - 2013 Novutec Inc. (http://www.novutec.com)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
