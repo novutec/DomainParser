@@ -1,0 +1,9 @@
+{
+    "name": "novutec/DomainParser"
+  , "description": "A domain name parser to parse and to validate a domain name."
+  , "keywords": ["domainparser", "domain", "php"]
+  , "homepage": "https://github.com/novutec/DomainParser/"
+  , "author": "Novutec Inc."
+  , "license": "Apache-2.0"
+  , "version": "1.1.7"
+}

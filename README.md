@@ -1,7 +1,7 @@
-Novutec DomainParser
-====================
+Novutec Domain Parser
+=====================
 
-To parse and to validate a domain name.
+A domain name parser to parse and to validate a domain name.
 
 At first it will parse a given string to split it by the hostname and top-level domain name.
 This will be done with a list from Mozilla and we also added some missing second-level domain
