@@ -192,6 +192,7 @@ class Parser
             $matchedDomainIdn = '';
             $matchedTld = '';
             $matchedTldIdn = '';
+            $matchedGroup = '';
             $validHostname = true;
             
             $IdnaConverter = new Idna(array('idn_version' => 2008));
@@ -199,34 +200,37 @@ class Parser
             preg_match('/^((http|https|ftp|ftps|news|ssh|sftp|gopher):[\/]{2,})?([^\/]+)/', mb_strtolower(trim($unparsedString), $this->encoding), $matches);
             $parsedString = $IdnaConverter->encode(end($matches));
             
-            foreach ($this->tldList['content'] as $tld) {
-                if (preg_match('/\.' . $tld . '$/', $parsedString, $trash)) {
-                    $matchedTld = $tld;
-                    $matchedTldIdn = $IdnaConverter->encode($tld);
-                    
-                    $matchedDomain = str_replace('.' . $matchedTld, '', $parsedString);
-                    $matchedDomain = rtrim($matchedDomain, '.');
-                    $matchedDomain = ltrim($matchedDomain, '.');
-                    
-                    if ($matchedTld != 'name' && strpos($matchedDomain, '.')) {
-                        $matchedDomain = str_replace('.', '', strrchr($matchedDomain, '.'));
+            foreach ($this->tldList['content'] as $tldgroup => $tlds) {
+                foreach ($tlds as $tld) {
+                    if (preg_match('/\.' . $tld . '$/', $parsedString, $trash)) {
+                        $matchedTld = $tld;
+                        $matchedTldIdn = $IdnaConverter->encode($tld);
+                        
+                        $matchedDomain = str_replace('.' . $matchedTld, '', $parsedString);
+                        $matchedDomain = rtrim($matchedDomain, '.');
+                        $matchedDomain = ltrim($matchedDomain, '.');
+                        
+                        if ($matchedTld != 'name' && strpos($matchedDomain, '.')) {
+                            $matchedDomain = str_replace('.', '', strrchr($matchedDomain, '.'));
+                        }
+                        
+                        if (strpos($matchedDomain, ' ')) {
+                            $matchedDomain = explode(' ', $matchedDomain);
+                            $matchedDomain = end($matchedDomain);
+                        }
+                        
+                        $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
+                        $matchedGroup = $tldgroup;
+                        
+                        break;
                     }
                     
-                    if (strpos($matchedDomain, ' ')) {
-                        $matchedDomain = explode(' ', $matchedDomain);
-                        $matchedDomain = end($matchedDomain);
+                    if ($tld == $parsedString) {
+                        $matchedTld = $tld;
+                        $matchedTldIdn = $IdnaConverter->encode($tld);
+                        
+                        break;
                     }
-                    
-                    $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
-                    
-                    break;
-                }
-                
-                if ($tld == $parsedString) {
-                    $matchedTld = $tld;
-                    $matchedTldIdn = $IdnaConverter->encode($tld);
-                    
-                    break;
                 }
             }
             
@@ -252,7 +256,8 @@ class Parser
             }
             
             $Result = new Result($matchedDomain, $matchedDomainIdn, 
-                    $IdnaConverter->decode($matchedTld), $matchedTldIdn, $validHostname);
+                    $IdnaConverter->decode($matchedTld), $matchedTldIdn, $matchedGroup, 
+                    $validHostname);
         } catch (\Novutec\DomainParser\AbstractException $e) {
             if ($this->throwExceptions) {
                 throw $e;
@@ -278,13 +283,23 @@ class Parser
         
         if (file_exists($filename)) {
             $this->tldList = unserialize(file_get_contents($filename));
+            
+            // will reload tld list if timestamp of cache file is outdated
             if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
+                $this->reload = true;
+            }
+            
+            // will reload tld list if changes to Additional.php have been made
+            if ($this->tldList['timestamp'] < filemtime(DOMAINPARSERPATH . '/Additional.php')) {
                 $this->reload = true;
             }
         }
         
-        if (! file_exists($filename) || $this->reload === true) {
-            $this->catchTlds();
+        // check connection - if there is no internet connection skip loading
+        $existFile = file_exists($filename);
+        
+        if (! $existFile || $this->reload === true) {
+            $this->catchTlds($existFile);
             $file = fopen($filename, 'w+');
             
             if ($file === false) {
@@ -310,58 +325,60 @@ class Parser
      * The manual added list is not complete.
      *
      * @throws ConnectErrorException
+     * @param  boolean $existFile
      * @return void
      */
-    private function catchTlds()
+    private function catchTlds($existFile)
     {
-        $IdnaConverter = new Idna(array('idn_version' => 2008));
-        $content = @file($this->tldUrl);
+        $content = @file_get_contents($this->tldUrl);
         
         if ($content === false) {
-            throw \Novutec\DomainParser\AbstractException::factory('Connect', 'Could not catch file from server.');
+            if (! $existFile) {
+                throw \Novutec\DomainParser\AbstractException::factory('Connect', 'Could not catch file from server.');
+            }
+            
             return;
         }
         
-        $subtlds = array();
+        $IdnaConverter = new Idna(array('idn_version' => 2008));
+        $content = substr($content, strrpos($content, '// ===BEGIN ICANN DOMAINS==='), strrpos($content, '// ===END ICANN DOMAINS==='));
+        $tlds = array();
         
-        foreach ($content as $num => $line) {
-            $line = trim($line);
+        preg_match('/\/\/ ===BEGIN ICANN DOMAINS===(.*)(?=\/\/ ===END ICANN DOMAINS===)/is', $content, $matches);
+        preg_match_all('/\/\/ ([a-z0-9\-]+) ([a-z\-\(\)\.\/<>" ]+ : [a-z]{2}|: (see )?(http|https):\/\/.+?|No registrations at this time.|This registry is effectively dormant|has 2nd-level tlds, but there\'s no list of them)[\r\n]{0,2}(.+?)(?=(\/\/ (?!municipalities|Norid|Non-Norid|domaines)([a-z0-9\-]*) (:|[a-z\-\(\)\.\/<>" ]+ : [a-z]{2})|$))/is', $matches[1], $matches);
+        
+        foreach ($matches[0] as $num => $block) {
+            $lines = array_map('trim', explode("\n", trim($block)));
             
-            if ($line == '') {
-                continue;
+            foreach ($lines as $tld) {
+                if (substr($tld, 0, 2) == '//' || $tld == '' || strstr($tld, '!')) {
+                    continue;
+                } else {
+                    if ($tld[0] == '*') {
+                        $tld = substr($tld, 2);
+                    }
+                    
+                    $tlds[$matches[1][$num]][] = $IdnaConverter->encode($tld);
+                }
             }
-            if (strstr($line, '// DynDNS.com')) {
-                break;
-            }
-            if (@substr($line[0], 0, 2) == '/') {
-                continue;
-            }
-            if (@$line[0] == '.') {
-                $line = substr($line, 1);
-            }
-            if (@$line[0] == '*') {
-                $line = substr($line, 2);
-            }
-            if (strstr($line, '!')) {
-                continue;
-            }
-            $subtlds[] = $IdnaConverter->encode($line);
         }
         
-        $subtlds = array_merge(array('co.cc', 'com.cc', 'org.cc', 'edu.cc', 'net.cc', 'co.uk', 
-                'co.ck', 'edu.ck', 'gov.ck', 'net.ck', 'org.ck', 'de.vu', 'me.uk', 'net.uk', 
-                'org.uk', 'sch.uk', 'ac.uk', 'gov.uk', 'nhs.uk', 'police.uk', 'mod.uk', 'asn.au', 
-                'com.au', 'net.au', 'id.au', 'org.au', 'edu.au', 'gov.au', 'csiro.au', 'co.ke', 
-                'or.ke', 'ne.ke', 'go.ke', 'ac.ke', 'sc.ke', 'me.ke', 'mobi.ke', 'info.ke', 'com.tr', 
-                'gen.tr', 'org.tr', 'biz.tr', 'info.tr', 'name.tr', 'net.tr', 'web.tr', 'edu.tr', 
-                'ac.nz', 'co.nz', 'geek.nz', 'gen.nz', 'maori.nz', 'net.nz', 'org.nz', 'school.nz', 
-                'ac.il', 'co.il', 'org.il', 'net.il', 'k12.il', 'gov.il', 'muni.il', 'idf.il'), $subtlds);
-        $this->tldList['content'] = array_unique($subtlds);
+        // load additional to add to list
+        require_once 'Additional.php';
+        
+        // merge list and sort tlds by length within its group
+        $this->tldList['content'] = array_merge_recursive($tlds, $additional);
+        
+        foreach ($this->tldList['content'] as $tldGroup => $tld) {
+            usort($tld, function ($a, $b)
+            {
+                return strlen($b) - strlen($a);
+            });
+            
+            $this->tldList['content'][$tldGroup] = $tld;
+        }
+        
         $this->tldList['timestamp'] = time();
-        usort($this->tldList['content'], function ($a, $b)
-        {
-            return strlen($b) - strlen($a);
-        });
     }
 
     /**

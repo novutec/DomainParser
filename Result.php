@@ -84,6 +84,14 @@ class Result
     protected $idnTld;
 
     /**
+     * Group name of top-level domain name
+     * 
+     * @var string
+     * @access protected
+     */
+    protected $tldGroup;
+
+    /**
      * Is the hostname valid
      * 
      * @var boolean
@@ -98,10 +106,11 @@ class Result
      * @param  string $idnDomain
      * @param  string $tld
      * @param  string $idnTld
+     * @param  string $tldGroup
      * @param  boolean $validHostname
      * @return void
      */
-    public function __construct($domain = '', $idnDomain = '', $tld = '', $idnTld = '', 
+    public function __construct($domain = '', $idnDomain = '', $tld = '', $idnTld = '', $tldGroup = '', 
             $validHostname = false)
     {
         if ($domain != '' && $tld != '') {
@@ -116,6 +125,7 @@ class Result
         $this->idnDomain = $idnDomain;
         $this->tld = $tld;
         $this->idnTld = $idnTld;
+        $this->tldGroup = $tldGroup;
         $this->validHostname = $validHostname;
     }
 
@@ -229,6 +239,8 @@ class Result
         $xml->addChild('idnDomain', $this->idnDomain);
         $xml->addChild('tld', $this->tld);
         $xml->addChild('idnTld', $this->idnTld);
+        $xml->addChild('tldGroup', $this->tldGroup);
+        $xml->addChild('validHostname', $this->validHostname);
         
         return $xml->asXML();
     }

@@ -59,7 +59,7 @@ Thanks to developers of following used libraries:
 
 ChangeLog
 ---------
-See ChangeLog at https://github.com/novutec/DomainParser/wiki/ChangeLog
+See ChangeLog at https://github.com/novutec/DomainParser/blob/master/CHANGELOG.md
 
 Issues
 ------
