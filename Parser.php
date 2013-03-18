@@ -319,12 +319,13 @@ class Parser
     /**
      * Catch list from server and parse them to array.
      *
-     * It drops DynDNS names and adds manually third-level domain names
-     * (e.g. co.uk, me.uk) because they are missing in the list.
+     * It only uses the official ICANN domain names and adds private
+     * domains and missing official third-levels by using an additional hash.
      *
      * The manual added list is not complete.
      *
      * @throws ConnectErrorException
+     * @see Novutec\Additional.php $additional
      * @param  boolean $existFile
      * @return void
      */

@@ -1,5 +1,11 @@
-### 2.0.0 (Jan 14, 2013)
-* rewriten `load()` method to use regex
+### 2.0.1 (Mar 18, 2013)
+* changed own version in composer.json
+* changed phpdoc for adding additional tlds in Parser `catchTlds`
+* fixed release dates in CHANGELOG.md
+* fixed typos in CHANGELOG.md
+
+### 2.0.0 (Mar 14, 2013)
+* rewritten `load()` method to use regex
 * added tldGroup to `Result`
 * added Additional.php file to outsource missing tlds 
 * added some .FJ second-level domain names because they were missing in the Mozilla list
@@ -8,7 +14,7 @@
 * changed exception handling - ConnectionException will only be thrown if there is no cache file and no internet connection
 * changed link to changelog in README.md
 
-### 1.1.7 (Jan 11, 2013)
+### 1.1.7 (Mar 11, 2013)
 * added composer.json
 * added CHANGELOG.md
 * changed description of Domain Parser in README.md
