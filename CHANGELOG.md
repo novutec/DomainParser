@@ -1,3 +1,7 @@
+### 2.0.2 (Jul 03, 2013)
+* rewritten mozilla domain name list parser (fix issue #1)
+* removed trailing spaces
+
 ### 2.0.1 (Mar 18, 2013)
 * changed own version in composer.json
 * changed phpdoc for adding additional tlds in Parser `catchTlds`
@@ -7,7 +11,7 @@
 ### 2.0.0 (Mar 14, 2013)
 * rewritten `load()` method to use regex
 * added tldGroup to `Result`
-* added Additional.php file to outsource missing tlds 
+* added Additional.php file to outsource missing tlds
 * added some .FJ second-level domain names because they were missing in the Mozilla list
 * added type to composer.json
 * added validHostname to XML output
@@ -44,7 +48,7 @@
 * added `dirname(__FILE__)` to require_once of classes
 * added support for looking up only top-level domain names
 * changed Exception handling, there are more different Exceptions to be thrown now
-* changed format in README.md 
+* changed format in README.md
 
 ### 1.1.0 (Jul 06, 2012)
 * added `setEncoding()` method for setting the encoding of given domain name
