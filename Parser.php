@@ -1,12 +1,12 @@
 <?php
 /**
  * Novutec Domain Tools
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -57,7 +57,7 @@ class Parser
 
     /**
      * Is the top-level domain list already be loaded?
-     * 
+     *
      * @var boolean
      * @access protected;
      */
@@ -65,7 +65,7 @@ class Parser
 
     /**
      * Should the exceptions be thrown or caugth and trapped in the response?
-     * 
+     *
      * @var boolean
      * @access protected
      */
@@ -73,7 +73,7 @@ class Parser
 
     /**
      * Should the cache file always be loaded from the server?
-     * 
+     *
      * @var boolean
      * @access protected
      */
@@ -81,7 +81,7 @@ class Parser
 
     /**
      * Life time of cached file
-     * 
+     *
      * @var integer
      * @access protected
      */
@@ -113,7 +113,7 @@ class Parser
 
     /**
      * Encoding of domain name
-     * 
+     *
      * @var string
      * @access protected
      */
@@ -121,7 +121,7 @@ class Parser
 
     /**
      * Set cache path
-     * 
+     *
      * @var string
      * @access protected
      */
@@ -141,7 +141,7 @@ class Parser
 
     /**
      * Set cache path
-     * 
+     *
      * @param  string $path
      * @return void
      */
@@ -156,7 +156,7 @@ class Parser
 
     /**
      * Checks if given domain name is valid
-     * 
+     *
      * @param  string $domain
      * @return boolean
      */
@@ -164,21 +164,21 @@ class Parser
     {
         $this->setFormat('object');
         $Result = $this->parse($domain, '');
-        
+
         return $Result->validHostname;
     }
 
     /**
      * Tries to parse a string and to get the domain name, tld and idn
      * converted domain name.
-     * 
+     *
      * If given string is not a domain name, it will add a default tld.
-     * 
+     *
      * Also skips given string if it is longer than 63 characters.
      *
      * @throws instance of AbstractException if throwExceptions = true
-     * @param  string $unparsedString        
-     * @param  string $defaultTld        
+     * @param  string $unparsedString
+     * @param  string $defaultTld
      * @return void
      */
     public function parse($unparsedString, $defaultTld = 'com')
@@ -187,53 +187,53 @@ class Parser
             if ($this->loaded === false) {
                 $this->load();
             }
-            
+
             $matchedDomain = '';
             $matchedDomainIdn = '';
             $matchedTld = '';
             $matchedTldIdn = '';
             $matchedGroup = '';
             $validHostname = true;
-            
+
             $IdnaConverter = new Idna(array('idn_version' => 2008));
-            
+
             preg_match('/^((http|https|ftp|ftps|news|ssh|sftp|gopher):[\/]{2,})?([^\/]+)/', mb_strtolower(trim($unparsedString), $this->encoding), $matches);
             $parsedString = $IdnaConverter->encode(end($matches));
-            
+
             foreach ($this->tldList['content'] as $tldgroup => $tlds) {
                 foreach ($tlds as $tld) {
                     if (preg_match('/\.' . $tld . '$/', $parsedString, $trash)) {
                         $matchedTld = $tld;
                         $matchedTldIdn = $IdnaConverter->encode($tld);
-                        
+
                         $matchedDomain = str_replace('.' . $matchedTld, '', $parsedString);
                         $matchedDomain = rtrim($matchedDomain, '.');
                         $matchedDomain = ltrim($matchedDomain, '.');
-                        
+
                         if ($matchedTld != 'name' && strpos($matchedDomain, '.')) {
                             $matchedDomain = str_replace('.', '', strrchr($matchedDomain, '.'));
                         }
-                        
+
                         if (strpos($matchedDomain, ' ')) {
                             $matchedDomain = explode(' ', $matchedDomain);
                             $matchedDomain = end($matchedDomain);
                         }
-                        
+
                         $matchedDomainIdn = $IdnaConverter->encode($matchedDomain);
                         $matchedGroup = $tldgroup;
-                        
+
                         break;
                     }
-                    
+
                     if ($tld == $parsedString) {
                         $matchedTld = $tld;
                         $matchedTldIdn = $IdnaConverter->encode($tld);
-                        
+
                         break;
                     }
                 }
             }
-            
+
             if ($matchedDomain == '' && strlen($matchedDomainIdn) <= 63 && $matchedTld == '') {
                 $matchedDomain = $IdnaConverter->decode(preg_replace_callback('/[^a-zA-Z0-9\-\.]/', function (
                         $match) use(&$validHostname)
@@ -254,19 +254,19 @@ class Parser
             } else {
                 throw \Novutec\DomainParser\AbstractException::factory('UnparsableString', 'Unparsable domain name.');
             }
-            
-            $Result = new Result($matchedDomain, $matchedDomainIdn, 
-                    $IdnaConverter->decode($matchedTld), $matchedTldIdn, $matchedGroup, 
+
+            $Result = new Result($matchedDomain, $matchedDomainIdn,
+                    $IdnaConverter->decode($matchedTld), $matchedTldIdn, $matchedGroup,
                     $validHostname);
         } catch (\Novutec\DomainParser\AbstractException $e) {
             if ($this->throwExceptions) {
                 throw $e;
             }
-            
+
             $Result = new Result();
             $Result->error = $e->getMessage();
         }
-        
+
         return $Result->get($this->format);
     }
 
@@ -280,39 +280,39 @@ class Parser
     private function load()
     {
         $filename = $this->path . '/domainparsertld.txt';
-        
+
         if (file_exists($filename)) {
             $this->tldList = unserialize(file_get_contents($filename));
-            
+
             // will reload tld list if timestamp of cache file is outdated
             if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
                 $this->reload = true;
             }
-            
+
             // will reload tld list if changes to Additional.php have been made
             if ($this->tldList['timestamp'] < filemtime(DOMAINPARSERPATH . '/Additional.php')) {
                 $this->reload = true;
             }
         }
-        
+
         // check connection - if there is no internet connection skip loading
         $existFile = file_exists($filename);
-        
+
         if (! $existFile || $this->reload === true) {
             $this->catchTlds($existFile);
             $file = fopen($filename, 'w+');
-            
+
             if ($file === false) {
                 throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
             }
-            
+
             if (fwrite($file, serialize($this->tldList)) === false) {
                 throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
             }
-            
+
             fclose($file);
         }
-        
+
         $this->loaded = true;
     }
 
@@ -332,53 +332,70 @@ class Parser
     private function catchTlds($existFile)
     {
         $content = @file_get_contents($this->tldUrl);
-        
+
         if ($content === false) {
             if (! $existFile) {
                 throw \Novutec\DomainParser\AbstractException::factory('Connect', 'Could not catch file from server.');
             }
-            
+
             return;
         }
-        
+
         $IdnaConverter = new Idna(array('idn_version' => 2008));
-        $content = substr($content, strrpos($content, '// ===BEGIN ICANN DOMAINS==='), strrpos($content, '// ===END ICANN DOMAINS==='));
-        $tlds = array();
-        
-        preg_match('/\/\/ ===BEGIN ICANN DOMAINS===(.*)(?=\/\/ ===END ICANN DOMAINS===)/is', $content, $matches);
-        preg_match_all('/\/\/ ([a-z0-9\-]+) ([a-z\-\(\)\.\/<>" ]+ : [a-z]{2}|: (see )?(http|https):\/\/.+?|No registrations at this time.|This registry is effectively dormant|has 2nd-level tlds, but there\'s no list of them)[\r\n]{0,2}(.+?)(?=(\/\/ (?!municipalities|Norid|Non-Norid|domaines)([a-z0-9\-]*) (:|[a-z\-\(\)\.\/<>" ]+ : [a-z]{2})|$))/is', $matches[1], $matches);
-        
-        foreach ($matches[0] as $num => $block) {
-            $lines = array_map('trim', explode("\n", trim($block)));
-            
-            foreach ($lines as $tld) {
-                if (substr($tld, 0, 2) == '//' || $tld == '' || strstr($tld, '!')) {
-                    continue;
-                } else {
-                    if ($tld[0] == '*') {
-                        $tld = substr($tld, 2);
-                    }
-                    
-                    $tlds[$matches[1][$num]][] = $IdnaConverter->encode($tld);
-                }
-            }
+
+        // only match official ICANN domain tlds
+        if (preg_match('/\/\/ ===BEGIN ICANN DOMAINS===(.*)(?=\/\/ ===END ICANN DOMAINS===)/s', $content, $matches) !== 1) {
+            throw \Novutec\DomainParser\AbstractException::factory('UnparsableString', 'Could not fetch ICANN Domains of Mozilla TLD File.');
         }
-        
+
+        $tlds = array();
+        $list_str = $matches[1];
+        foreach (explode("\n", $list_str) as $line) {
+            $line = trim($line);
+
+            // skip empty or comment lines
+            if ($line == '' || $line[0] == '/' || strpos($line, '!') !== false) {
+                continue;
+            }
+
+            // reformat prefixed wildcards
+            if ($line[0] == '*') {
+                $line = substr($line, 2);
+            }
+
+            // convert to xn-- format
+            $tld = $IdnaConverter->encode($line);
+
+            // validate if toplevel domain
+            $pos = strrpos($tld, '.');
+            if ($pos === false) {
+                $match = $tld;
+            } else {
+                $match = substr($tld, $pos+1);
+            }
+
+            if (!isset($tlds[$match])) {
+                $tlds[$match] = array();
+            }
+
+            $tlds[$match][] = $tld;
+        }
+
         // load additional to add to list
         require_once 'Additional.php';
-        
+
         // merge list and sort tlds by length within its group
         $this->tldList['content'] = array_merge_recursive($tlds, $additional);
-        
+
         foreach ($this->tldList['content'] as $tldGroup => $tld) {
             usort($tld, function ($a, $b)
             {
                 return strlen($b) - strlen($a);
             });
-            
+
             $this->tldList['content'][$tldGroup] = $tld;
         }
-        
+
         $this->tldList['timestamp'] = time();
     }
 
@@ -397,7 +414,7 @@ class Parser
 
     /**
      * Set encoding of domain name
-     * 
+     *
      * @param  string $encoding
      * @return void
      */
@@ -408,13 +425,13 @@ class Parser
 
     /**
      * Set the throwExceptions flag
-     * 
+     *
      * Set whether exceptions encounted during processing should be thrown
      * or caught and trapped in the response as a string message.
-     * 
+     *
      * Default behaviour is to trap them in the response; call this
      * method to have them thrown.
-     * 
+     *
      * @param  boolean $throwExceptions
      * @return void
      */
@@ -425,10 +442,10 @@ class Parser
 
     /**
      * Set the reload flag
-     * 
+     *
      * Set if the top-level domain list should be reloaded independet from
      * the cache time.
-     * 
+     *
      * @param  boolean $reload
      * @return void
      */
@@ -439,7 +456,7 @@ class Parser
 
     /**
      * Set the cache time
-     * 
+     *
      * By default the cache time is 432000 (equal to 5 days)
      *
      * @param  integer $cacheTime
