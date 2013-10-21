@@ -292,7 +292,7 @@ class Parser
      *
      * @return boolean
      */
-    private function needsReload()
+    public function needsReload()
     {
         if ($this->reloadAlways) {
             return true;
@@ -315,7 +315,7 @@ class Parser
      * @throws WriteFileErrorException
      * @return void
      */
-    private function performReload()
+    public function performReload()
     {
         $filename = $this->path . '/tlds.json';
 
