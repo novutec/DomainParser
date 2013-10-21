@@ -338,18 +338,13 @@ class Parser
      *
      * @throws ConnectErrorException
      * @see Novutec\Additional.php $additional
-     * @param  boolean $existFile
      * @return void
      */
-    private function catchTlds($existFile)
+    private function catchTlds()
     {
         $content = @file_get_contents($this->tldUrl);
 
         if ($content === false) {
-            if (! $existFile) {
-                throw \Novutec\DomainParser\AbstractException::factory('Connect', 'Could not catch file from server.');
-            }
-
             return;
         }
 
