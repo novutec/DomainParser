@@ -283,7 +283,7 @@ class Parser
         if (!file_exists($filename)) {
             throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
         }
-        $this->tldList = json_decode(file_get_contents($filename));
+        $this->tldList = json_decode(file_get_contents($filename), true);
         $this->loaded = true;
     }
 
