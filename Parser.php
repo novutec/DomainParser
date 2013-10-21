@@ -271,49 +271,61 @@ class Parser
     }
 
     /**
-     * Checks if the domain list exists or cached time is reached
+     * Loads the list of TLDs.
      *
      * @throws OpenFileErrorException
-     * @throws WriteFileErrorException
      * @return void
      */
     private function load()
     {
-        $filename = $this->path . '/domainparsertld.txt';
+        $filename = $this->path . '/tlds.txt';
 
-        if (file_exists($filename)) {
-            $this->tldList = unserialize(file_get_contents($filename));
-
-            // will reload tld list if timestamp of cache file is outdated
-            if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
-                $this->reload = true;
-            }
-
-            // will reload tld list if changes to Additional.php have been made
-            if ($this->tldList['timestamp'] < filemtime(DOMAINPARSERPATH . '/Additional.php')) {
-                $this->reload = true;
-            }
+        if (!file_exists($filename)) {
+            throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
         }
-
-        // check connection - if there is no internet connection skip loading
-        $existFile = file_exists($filename);
-
-        if (! $existFile || $this->reload === true) {
-            $this->catchTlds($existFile);
-            $file = fopen($filename, 'w+');
-
-            if ($file === false) {
-                throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
-            }
-
-            if (fwrite($file, serialize($this->tldList)) === false) {
-                throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
-            }
-
-            fclose($file);
-        }
-
+        $this->tldList = unserialize(file_get_contents($filename));
         $this->loaded = true;
+    }
+
+    /**
+     * Checks if the list of TLDs needs or should be reloaded.
+     *
+     * @return boolean
+     */
+    private function needsReload()
+    {
+        if ($this->reloadAlways) {
+            return true;
+        }
+        // will reload tld list if timestamp of cache file is outdated
+        if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
+            return true;
+        }
+
+        // will reload tld list if changes to Additional.php have been made
+        if ($this->tldList['timestamp'] < filemtime(DOMAINPARSERPATH . '/Additional.php')) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reload the list of TLDs.
+     *
+     * @throws WriteFileErrorException
+     * @return void
+     */
+    private function performReload()
+    {
+        $filename = $this->path . '/tlds.json';
+
+        $this->catchTlds();
+        $file = fopen($filename, 'w+');
+
+        if (fwrite($file, serialize($this->tldList)) === false) {
+            throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
+        }
+        fclose($file);
     }
 
     /**
