@@ -322,7 +322,7 @@ class Parser
         $this->catchTlds();
         $file = fopen($filename, 'w+');
 
-        if (fwrite($file, json_encode($this->tldList)) === false) {
+        if (fwrite($file, json_encode($this->tldList, JSON_PRETTY_PRINT)) === false) {
             throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
         }
         fclose($file);
