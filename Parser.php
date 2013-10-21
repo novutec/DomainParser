@@ -278,12 +278,12 @@ class Parser
      */
     private function load()
     {
-        $filename = $this->path . '/tlds.txt';
+        $filename = $this->path . '/tlds.json';
 
         if (!file_exists($filename)) {
             throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
         }
-        $this->tldList = unserialize(file_get_contents($filename));
+        $this->tldList = json_decode(file_get_contents($filename));
         $this->loaded = true;
     }
 
@@ -322,7 +322,7 @@ class Parser
         $this->catchTlds();
         $file = fopen($filename, 'w+');
 
-        if (fwrite($file, serialize($this->tldList)) === false) {
+        if (fwrite($file, json_encode($this->tldList)) === false) {
             throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
         }
         fclose($file);
