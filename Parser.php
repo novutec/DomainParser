@@ -77,7 +77,7 @@ class Parser
      * @var boolean
      * @access protected
      */
-    protected $reload = false;
+    protected $reloadAlways = false;
 
     /**
      * Life time of cached file
@@ -451,7 +451,7 @@ class Parser
      */
     public function reload($reload = false)
     {
-        $this->reload = filter_var($reload, FILTER_VALIDATE_BOOLEAN);
+        $this->reloadAlways = filter_var($reload, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
