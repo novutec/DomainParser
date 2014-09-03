@@ -133,10 +133,10 @@ class Parser
      * @param  string $format
      * @return void
      */
-    public function __construct($format = 'object')
+    public function __construct($format = 'object', $path = null)
     {
         $this->setFormat($format);
-        $this->setCachePath();
+        $this->setCachePath($path);
     }
 
     /**
