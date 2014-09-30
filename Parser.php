@@ -77,7 +77,7 @@ class Parser
      * @var boolean
      * @access protected
      */
-    protected $reload = false;
+    protected $reloadAlways = false;
 
     /**
      * Life time of cached file
@@ -148,7 +148,7 @@ class Parser
     public function setCachePath($path = null)
     {
         if (is_null($path)) {
-            $this->path = sys_get_temp_dir();
+            $this->path = __DIR__;
         } else {
             $this->path = filter_var($path, FILTER_SANITIZE_STRING);
         }
@@ -271,49 +271,61 @@ class Parser
     }
 
     /**
-     * Checks if the domain list exists or cached time is reached
+     * Loads the list of TLDs.
      *
      * @throws OpenFileErrorException
-     * @throws WriteFileErrorException
      * @return void
      */
     private function load()
     {
-        $filename = $this->path . '/domainparsertld.txt';
+        $filename = $this->path . '/tlds.json';
 
-        if (file_exists($filename)) {
-            $this->tldList = unserialize(file_get_contents($filename));
-
-            // will reload tld list if timestamp of cache file is outdated
-            if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
-                $this->reload = true;
-            }
-
-            // will reload tld list if changes to Additional.php have been made
-            if ($this->tldList['timestamp'] < filemtime(DOMAINPARSERPATH . '/Additional.php')) {
-                $this->reload = true;
-            }
+        if (!file_exists($filename)) {
+            throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
         }
-
-        // check connection - if there is no internet connection skip loading
-        $existFile = file_exists($filename);
-
-        if (! $existFile || $this->reload === true) {
-            $this->catchTlds($existFile);
-            $file = fopen($filename, 'w+');
-
-            if ($file === false) {
-                throw \Novutec\DomainParser\AbstractException::factory('OpenFile', 'Could not open cache file.');
-            }
-
-            if (fwrite($file, serialize($this->tldList)) === false) {
-                throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
-            }
-
-            fclose($file);
-        }
-
+        $this->tldList = json_decode(file_get_contents($filename), true);
         $this->loaded = true;
+    }
+
+    /**
+     * Checks if the list of TLDs needs or should be reloaded.
+     *
+     * @return boolean
+     */
+    public function needsReload()
+    {
+        if ($this->reloadAlways) {
+            return true;
+        }
+        // will reload tld list if timestamp of cache file is outdated
+        if (time() - $this->tldList['timestamp'] > $this->cacheTime) {
+            return true;
+        }
+
+        // will reload tld list if changes to Additional.php have been made
+        if ($this->tldList['timestamp'] < filemtime(DOMAINPARSERPATH . '/Additional.php')) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reload the list of TLDs.
+     *
+     * @throws WriteFileErrorException
+     * @return void
+     */
+    public function performReload()
+    {
+        $filename = $this->path . '/tlds.json';
+
+        $this->catchTlds();
+        $file = fopen($filename, 'w+');
+
+        if (fwrite($file, json_encode($this->tldList, JSON_PRETTY_PRINT)) === false) {
+            throw \Novutec\DomainParser\AbstractException::factory('WriteFile', 'Could not open cache file for writing.');
+        }
+        fclose($file);
     }
 
     /**
@@ -326,18 +338,13 @@ class Parser
      *
      * @throws ConnectErrorException
      * @see Novutec\Additional.php $additional
-     * @param  boolean $existFile
      * @return void
      */
-    private function catchTlds($existFile)
+    private function catchTlds()
     {
         $content = @file_get_contents($this->tldUrl);
 
         if ($content === false) {
-            if (! $existFile) {
-                throw \Novutec\DomainParser\AbstractException::factory('Connect', 'Could not catch file from server.');
-            }
-
             return;
         }
 
@@ -451,7 +458,7 @@ class Parser
      */
     public function reload($reload = false)
     {
-        $this->reload = filter_var($reload, FILTER_VALIDATE_BOOLEAN);
+        $this->reloadAlways = filter_var($reload, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
