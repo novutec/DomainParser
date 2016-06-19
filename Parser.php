@@ -101,7 +101,7 @@ class Parser
      * @var string
      * @access protected
      */
-    protected $tldUrl = 'http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1';
+    protected $tldUrl = 'https://publicsuffix.org/list/public_suffix_list.dat';
 
     /**
      * Output format 'object', 'array', 'json', 'serialize' or 'xml'
